@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>犀牛共创地图 · V1</title>
+  <style>
+    :root {
+      --ink: #1f2b2a;
+      --muted: #66716e;
+      --paper: #f5f0e7;
+      --card: #fffdf8;
+      --line: #ded8cc;
+      --coral: #e96e52;
+      --coral-soft: #fae1d8;
+      --moss: #718d73;
+      --moss-soft: #e2ecdf;
+      --gold: #d2a24a;
+      --blue-soft: #dfeaf0;
+      --shadow: 0 18px 50px rgba(58, 48, 35, .09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(233,110,82,.12), transparent 28rem),
+        radial-gradient(circle at 92% 8%, rgba(113,141,115,.14), transparent 24rem),
+        var(--paper);
+      font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; opacity: .25;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+    }
+    .shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 42px 0 70px; position: relative; }
+    .eyebrow { color: var(--coral); font-size: 12px; letter-spacing: .17em; font-weight: 800; text-transform: uppercase; }
+    h1, h2, h3 { font-family: "Noto Serif SC", "Songti SC", serif; font-weight: 700; letter-spacing: -.03em; }
+    h1 { margin: 10px 0 14px; font-size: clamp(38px, 5vw, 68px); line-height: 1.02; max-width: 760px; }
+    .intro { display: flex; justify-content: space-between; gap: 36px; align-items: end; }
+    .lead { color: var(--muted); font-size: 16px; line-height: 1.8; max-width: 620px; margin: 0; }
+    .stamp { border: 1px solid var(--line); background: rgba(255,253,248,.58); padding: 14px 17px; min-width: 160px; transform: rotate(2deg); box-shadow: 4px 5px 0 rgba(210,162,74,.23); }
+    .stamp strong { display:block; font-size: 22px; font-family: "Noto Serif SC", serif; }
+    .stamp span { color: var(--muted); font-size: 12px; }
+    .purpose { margin-top: 32px; display:grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border:1px solid var(--line); }
+    .purpose div { background: rgba(255,253,248,.72); padding: 17px 20px; }
+    .purpose b { display:block; font-size: 13px; margin-bottom: 6px; }
+    .purpose span { color: var(--muted); font-size: 13px; }
+    .toolbar { margin-top: 42px; display:flex; justify-content:space-between; align-items:center; gap: 20px; flex-wrap:wrap; }
+    .tabs { display:flex; gap: 8px; flex-wrap:wrap; }
+    .tab { border: 1px solid var(--line); background: rgba(255,253,248,.6); color: var(--muted); border-radius: 999px; padding: 9px 15px; cursor:pointer; font: inherit; font-size: 13px; transition: .2s ease; }
+    .tab:hover, .tab.active { background: var(--ink); color: white; border-color: var(--ink); transform: translateY(-1px); }
+    .count { color: var(--muted); font-size: 13px; }
+    .admin-controls { display:flex; align-items:center; gap:10px; margin-left:auto; }
+    .admin-state { color:var(--moss); font-size:12px; font-weight:800; }
+    .admin-entry { border:1px solid var(--line); background:rgba(255,253,248,.7); color:var(--muted); border-radius:6px; padding:8px 11px; cursor:pointer; font:inherit; font-size:12px; }
+    .admin-entry:hover { border-color:var(--ink); color:var(--ink); background:#fffaf0; }
+    .subnav { display:flex; gap:7px; flex-wrap:wrap; margin-top:14px; min-height:34px; }
+    .subtab { border:1px solid transparent; background:transparent; color:var(--muted); border-radius:5px; padding:7px 10px; cursor:pointer; font:inherit; font-size:12px; transition:.2s ease; }
+    .subtab:hover, .subtab.active { border-color:var(--line); background:rgba(255,253,248,.8); color:var(--ink); }
+    .subtab.active { box-shadow: inset 0 -2px 0 var(--coral); }
+    .owner-board { display:flex; gap:9px; flex-wrap:wrap; margin-top:15px; padding:15px; border:1px solid var(--line); background:rgba(255,253,248,.64); }
+    .owner-chip { border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--muted); padding:8px 12px; cursor:pointer; font:inherit; font-size:13px; }
+    .owner-chip:hover, .owner-chip.active { border-color:var(--ink); background:var(--ink); color:white; }
+    .owner-chip small { margin-left:4px; opacity:.7; }
+    .section-head { display:flex; justify-content:space-between; align-items:baseline; margin: 30px 0 15px; }
+    .section-head h2 { margin:0; font-size: 26px; }
+    .section-head p { margin:0; color:var(--muted); font-size:13px; }
+    .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .group-label { grid-column:1/-1; display:flex; align-items:center; gap:12px; margin:22px 0 0; padding:10px 2px 7px; border-bottom:1px solid var(--line); color:var(--muted); }
+    .group-label:first-child { margin-top:0; }
+    .group-label strong { color:var(--ink); font-family:"Noto Serif SC", "Songti SC", serif; font-size:18px; }
+    .group-label span { font-size:12px; }
+    .group-label em { margin-left:auto; font-style:normal; font-size:11px; color:var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 22px; min-height: 320px; display:flex; flex-direction:column; position:relative; box-shadow: var(--shadow); transition: transform .22s ease, box-shadow .22s ease; animation: rise .55s both; }
+    .card:hover { transform: translateY(-5px) rotate(-.25deg); box-shadow: 0 24px 60px rgba(58,48,35,.14); }
+    .card:nth-child(2) { animation-delay: .06s; } .card:nth-child(3) { animation-delay: .12s; }
+    .card:nth-child(4) { animation-delay: .18s; } .card:nth-child(5) { animation-delay: .24s; } .card:nth-child(6) { animation-delay: .30s; }
+    @keyframes rise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+    .card-top { display:flex; justify-content:space-between; gap: 10px; align-items:center; }
+    .type { font-size: 11px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+    .status { border-radius:999px; padding:5px 9px; font-size:11px; font-weight:800; background:var(--coral-soft); color:#a94e39; }
+    .status-button { border:0; cursor:pointer; font:inherit; transition:.2s ease; }
+    .status-button:hover { box-shadow:0 0 0 3px rgba(233,110,82,.15); transform:translateY(-1px); }
+    .status.green { background:var(--moss-soft); color:#557058; } .status.blue { background:var(--blue-soft); color:#4f6d79; } .status.gray { background:#e2e1dc; color:#777870; }
+    .card h3 { font-size: 23px; line-height:1.25; margin: 16px 0 9px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .owner { color: var(--coral); font-size: 13px; font-weight: 800; }
+    .description { color: var(--muted); font-size: 14px; line-height:1.72; margin: 16px 0 18px; }
+    .need { border-left: 3px solid var(--gold); background: #fbf4e5; padding: 11px 13px; font-size: 13px; line-height:1.55; margin-top:auto; }
+    .need.pending { border-left-color: #b9b2a4; background: #f3f0e9; color: var(--muted); }
+    .need b { display:block; font-size: 11px; color:#99702c; letter-spacing:.08em; margin-bottom: 3px; }
+    .tags { display:flex; gap:6px; flex-wrap:wrap; margin-top: 15px; }
+    .tag { color:var(--muted); background:#f0eee8; border-radius:4px; font-size:11px; padding:4px 7px; }
+    .card-footer { display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-top:17px; padding-top:14px; border-top:1px dashed var(--line); }
+    .claimed { border:0; padding:0; background:transparent; color:var(--muted); font:inherit; font-size:12px; cursor:pointer; text-align:left; }
+    .claimed:hover { color:var(--coral); text-decoration:underline; }
+    .actions { display:flex; gap:8px; align-items:center; }
+    .edit { border:1px solid var(--line); cursor:pointer; border-radius: 6px; background:transparent; color:var(--muted); padding:9px 10px; font:inherit; font-weight:700; font-size:12px; transition:.2s; }
+    .edit:hover { border-color:var(--ink); color:var(--ink); background:#f7f2e9; }
+    .support { border:0; cursor:pointer; border-radius: 6px; background:var(--coral); color:white; padding:10px 12px; font:inherit; font-weight:800; font-size:12px; transition: .2s; }
+    .support:hover { background:#c9533d; transform: translateY(-1px); }
+    .empty { display:none; padding: 40px; text-align:center; border:1px dashed var(--line); color:var(--muted); grid-column:1/-1; }
+    .how { margin-top: 50px; background: var(--ink); color: white; padding: 27px 30px; display:grid; grid-template-columns: 1.1fr 2fr; gap: 30px; align-items:center; }
+    .how h2 { margin:0; font-size:28px; }
+    .how p { margin:8px 0 0; color:#bec9c4; font-size:13px; line-height:1.7; }
+    .steps { display:grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .step { border-left: 1px solid #65726c; padding-left: 15px; }
+    .step b { display:block; color:#f2c270; font-size: 12px; margin-bottom:6px; }
+    .step span { color:#e9eeeb; font-size:13px; line-height:1.55; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(31,43,42,.45); display:none; align-items:center; justify-content:center; padding:20px; z-index:5; }
+    .modal-backdrop.open { display:flex; }
+    .modal { width:min(520px,100%); background:var(--card); border:1px solid var(--line); box-shadow:0 30px 80px rgba(0,0,0,.25); padding:28px; }
+    .modal h2 { margin:0 0 8px; font-size:27px; }
+    .modal p { color:var(--muted); font-size:13px; line-height:1.7; margin:0 0 18px; }
+    .choices { display:grid; gap:9px; }
+    .choice { text-align:left; border:1px solid var(--line); background:#fffaf0; padding:13px 14px; cursor:pointer; font:inherit; color:var(--ink); }
+    .choice:hover { border-color:var(--coral); background:var(--coral-soft); }
+    .close { margin-top:18px; border:0; background:none; color:var(--muted); cursor:pointer; font:inherit; font-size:13px; }
+    .form-grid { display:grid; gap:13px; }
+    .form-label { display:grid; gap:6px; color:var(--muted); font-size:12px; font-weight:800; }
+    .form-input, .form-textarea, .form-select { width:100%; border:1px solid var(--line); background:#fffaf0; color:var(--ink); padding:10px 11px; font:inherit; font-size:13px; outline:none; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color:var(--coral); box-shadow:0 0 0 3px rgba(233,110,82,.12); }
+    .form-textarea { min-height:82px; resize:vertical; line-height:1.55; }
+    .form-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:19px; }
+    .save { border:0; cursor:pointer; border-radius:6px; background:var(--ink); color:white; padding:10px 15px; font:inherit; font-size:13px; font-weight:800; }
+    .support-list { display:grid; gap:8px; max-height:360px; overflow:auto; }
+    .supporter-row { display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:11px 12px; background:#fffaf0; border:1px solid var(--line); }
+    .supporter-row strong { font-size:14px; }
+    .supporter-row span { color:var(--muted); font-size:12px; text-align:right; }
+    .remove-support { border:0; background:none; color:var(--coral); cursor:pointer; font:inherit; font-size:12px; padding:0 0 0 7px; }
+    .remove-support:hover { text-decoration:underline; }
+    .support-empty { padding:18px; color:var(--muted); background:#f3f0e9; text-align:center; font-size:13px; }
+    .form-note { color:var(--muted); font-size:12px; line-height:1.55; margin-top:-5px; }
+    .updated { color:var(--muted); font-size:12px; margin-top:8px; }
+    .card.paused { filter:grayscale(1); opacity:.58; box-shadow:none; }
+    .progress-board { display:grid; grid-template-columns:repeat(7, minmax(235px, 1fr)); gap:12px; overflow-x:auto; padding-bottom:10px; }
+    .progress-column { min-width:235px; background:rgba(255,253,248,.62); border:1px solid var(--line); padding:12px; }
+    .progress-column.paused-column { background:#ebeae5; }
+    .progress-column-head { display:flex; justify-content:space-between; gap:8px; align-items:baseline; padding:3px 2px 11px; border-bottom:1px solid var(--line); }
+    .progress-column-head strong { font-family:"Noto Serif SC", "Songti SC", serif; font-size:17px; }
+    .progress-column-head span { color:var(--muted); font-size:11px; }
+    .progress-cards { display:grid; gap:12px; padding-top:12px; }
+    .progress-cards .card { min-height:300px; }
+    [hidden] { display:none !important; }
+    .toast { position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); background:var(--ink); color:white; padding:12px 16px; font-size:13px; opacity:0; pointer-events:none; transition:.25s; z-index:9; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    @media (max-width: 860px) { .cards { grid-template-columns: repeat(2,1fr); } .intro { align-items:start; flex-direction:column; } .how { grid-template-columns:1fr; } }
+    @media (max-width: 560px) { .shell { width:min(100% - 28px,1180px); padding-top:28px; } .purpose { grid-template-columns:1fr; } .cards { grid-template-columns:1fr; } .stamp { align-self:flex-start; } .steps { grid-template-columns:1fr; gap:16px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">RHINO · CO-CREATION MAP / V1</div>
+    <div class="intro">
+      <div>
+        <h1>一起把想做的事，变成犀牛正在发生的事。</h1>
+        <p class="lead">这里的每一个项目和活动，都是成员发起、大家共建的事情。每个人都可以补充项目进展，也可以选择自己愿意提供的支持。</p>
+      </div>
+      <div class="stamp"><strong id="projectCount">47 个</strong><span>来自飞书共创表的项目与活动</span></div>
+    </div>
+
+    <div class="purpose">
+      <div><b>成员共同维护</b><span>一起更新项目的状态与需要</span></div>
+      <div><b>成员来共建</b><span>选择自己愿意提供的支持</span></div>
+      <div><b>一起留下结果</b><span>让支持从一句话变成真实发生</span></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="筛选项目">
+        <button class="tab active" data-filter="all">全部</button>
+        <button class="tab" data-filter="project">成员项目</button>
+        <button class="tab" data-filter="activity">犀牛活动</button>
+        <button class="tab" data-filter="community">社群共建</button>
+        <button class="tab" data-filter="owners">按发起人</button>
+      </div>
+      <div class="admin-controls"><span class="admin-state" id="adminState"></span><button class="admin-entry" id="adminEntry" type="button">管理员入口</button><span class="count" id="count">显示 47 个项目与活动</span></div>
+    </div>
+    <div class="subnav" id="subnav" aria-label="主题分层"></div>
+    <div class="owner-board" id="ownerBoard" hidden aria-label="发起人分层"></div>
+
+    <div class="section-head"><h2>现在可以一起共建</h2><p>先看大类，再看主题层级；所有人都可以补充和更新</p></div>
+    <section class="cards" id="cards"><div class="empty" id="empty">这个分类暂时还没有展示项目。</div></section>
+
+    <section class="how">
+      <div><h2>共建，不只是点个赞。</h2><p>大家先看清楚彼此想做的事，再留下具体的支持意向。</p></div>
+      <div class="steps"><div class="step"><b>01 · 一起维护</b><span>任何成员都可以补充项目的状态、需要和最新进展。</span></div><div class="step"><b>02 · 成员来共建</b><span>每个人可以选择反馈、连接、参与或一起推进。</span></div><div class="step"><b>03 · 管理员维护秩序</b><span>支持意向发生变化时，由管理员统一删除。</span></div></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle">我想支持这个项目</h2>
+      <p id="modalText">留下姓名或昵称，发起人和其他成员都会看到你的支持意向。</p>
+      <form id="supportForm" class="form-grid">
+        <label class="form-label">你的姓名 / 昵称<input class="form-input" name="supporterName" required maxlength="40" placeholder="例如：Pinpin" /></label>
+        <label class="form-label">我愿意提供（自由填写）<textarea class="form-textarea" name="supportType" required maxlength="240" rows="4" placeholder="你愿意提供什么都可以，比如：一次反馈、一个资源连接、一起参加一次活动……"></textarea></label>
+        <p class="form-note">只记录这一次共创支持，不收集手机号和邮箱。</p>
+        <div class="form-actions"><button type="button" class="close" id="close">先不提交</button><button type="submit" class="save">提交支持意向</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="supportersModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="supportersTitle">
+      <h2 id="supportersTitle">支持意向</h2>
+      <p id="supportersText">已经留下支持意向的成员：</p>
+      <div class="support-list" id="supportList"></div>
+      <button class="close" id="closeSupporters">返回看看</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <h2 id="editTitle">编辑共创卡片</h2>
+      <p>任何成员更新后，修改会保存到网站，所有人刷新页面都能看到同一版内容。</p>
+      <form id="editForm" class="form-grid">
+        <label class="form-label">项目 / 活动名称<input class="form-input" name="title" required /></label>
+        <label class="form-label">发起人<input class="form-input" name="owner" required /></label>
+        <label class="form-label">当前进度<select class="form-select" name="progress"><option>待开始</option><option>正在策划</option><option>已拉群共建中</option><option>有阶段性成果</option><option>已完成</option><option>已暂停</option></select></label>
+        <label class="form-label">现在最需要<textarea class="form-textarea" name="need" placeholder="由发起人自己写：我现在最需要大家提供什么？"></textarea></label>
+        <label class="form-label">最新更新时间<input class="form-input" name="updatedAt" type="date" /></label>
+        <div class="form-actions"><button type="button" class="close" id="cancelEdit">取消</button><button type="submit" class="save">保存修改</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="adminModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <h2 id="adminTitle">管理员入口</h2>
+      <p>成员不需要登录。管理员进入后，可以删除已经取消的支持意向。</p>
+      <form id="adminForm" class="form-grid">
+        <label class="form-label">管理员密码<input class="form-input" name="password" type="password" required autocomplete="current-password" placeholder="请输入管理员密码" /></label>
+        <p class="form-note" id="adminNote">管理员模式只用于维护支持意向，不影响大家编辑项目。</p>
+        <div class="form-actions"><button type="button" class="close" id="cancelAdmin">取消</button><button type="submit" class="save">进入管理员模式</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast">已记录：你想先了解这个项目</div>
+
+  <script src="rhino-cocreation-data.js"></script>
+  <script>
+    const baseProjects = window.RHINO_PROJECTS || [];
+    const staticMode = true;
+    const readLocal = (key, fallback) => {
+      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; }
+    };
+    const writeLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+    const overrides = readLocal('rhino-cocreation-static-overrides-v1', {});
+    const tabs = [...document.querySelectorAll('.tab')];
+    const empty = document.getElementById('empty');
+    const count = document.getElementById('count');
+    const projectCount = document.getElementById('projectCount');
+    const cardsRoot = document.getElementById('cards');
+    const toast = document.getElementById('toast');
+    const modal = document.getElementById('modal');
+    const supportForm = document.getElementById('supportForm');
+    const supportersModal = document.getElementById('supportersModal');
+    const supportersText = document.getElementById('supportersText');
+    const supportList = document.getElementById('supportList');
+    const ownerBoard = document.getElementById('ownerBoard');
+    const editModal = document.getElementById('editModal');
+    const editForm = document.getElementById('editForm');
+    const adminModal = document.getElementById('adminModal');
+    const adminForm = document.getElementById('adminForm');
+    const adminEntry = document.getElementById('adminEntry');
+    const adminState = document.getElementById('adminState');
+    const adminNote = document.getElementById('adminNote');
+    const subnav = document.getElementById('subnav');
+    let activeFilter = 'all';
+    let activeSubfilter = 'all';
+    let activeOwner = 'all';
+    let editingId = null;
+    let remoteSupports = readLocal('rhino-cocreation-static-supports-v1', []);
+    let supportExclusions = readLocal('rhino-cocreation-static-exclusions-v1', []);
+    let isAdmin = false;
+    if (staticMode) adminEntry.hidden = true;
+
+    const esc = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    const projects = () => baseProjects.map(item => ({...item, ...(overrides[item.id] || {})}));
+    const progressStages = ['待开始','正在策划','已拉群共建中','有阶段性成果','已完成','已暂停'];
+    const normalizeProgress = status => ({'进行中':'已拉群共建中','已拉群':'已拉群共建中','共建中':'已拉群共建中','有阶段结果':'有阶段性成果','暂停':'已暂停','正在策划中':'正在策划'}[status] || status || '待开始');
+    const statusClass = status => normalizeProgress(status) === '已完成' ? 'green' : (['正在策划','已拉群共建中','有阶段性成果'].includes(normalizeProgress(status)) ? 'blue' : (normalizeProgress(status) === '已暂停' ? 'gray' : ''));
+    const ownerNames = item => [...new Set(String(item.owner || '待补充').split(/[、,，&＆\/]|\s+和\s+/).map(name => name.trim()).filter(Boolean))];
+    const nameAndType = record => record.name + '::' + record.type;
+    const supporterRecords = item => {
+      const excluded = new Set(supportExclusions.filter(record => record.projectId === item.id).map(record => record.name));
+      const seeded = (item.supporters || []).filter(name => name && !excluded.has(name)).map(name => ({ name, type:'平遥线下共创会时愿意支持', source:'seeded' }));
+      const submitted = remoteSupports.filter(record => record.projectId === item.id).map(record => ({ id:record.id, name:record.name, type:record.supportType, source:'submitted' }));
+      const seen = new Set();
+      return [...seeded, ...submitted].filter(record => {
+        const key = nameAndType(record);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+    const supporterCount = item => supporterRecords(item).length;
+    const typeLabel = item => item.category || '成员项目';
+    const layerLabel = item => item.layer || '待归类';
+    const fallbackNeed = item => item.category === '犀牛活动'
+      ? '欢迎补充这场活动现在最需要的参与者、资源或协作方式（待发起人确认）'
+      : '欢迎补充现在最需要的伙伴、资源或反馈（待发起人确认）';
+    const renderCard = item => {
+      const progress = normalizeProgress(item.progress);
+      const need = item.need ? esc(item.need) : esc(fallbackNeed(item));
+      const needClass = item.need ? 'need' : 'need pending';
+      const supportText = supporterCount(item) ? `已有 ${supporterCount(item)} 位支持意向` : '还没有公开支持意向';
+      const locations = item.locations && item.locations.length > 1 ? `<p class="description"><strong>共建成员：</strong>${esc(item.locations.join('；'))}</p>` : '';
+      const tags = (item.tags || '').split(/[、,，]/).map(tag => tag.trim()).filter(Boolean).map(tag => `<span class="tag">${esc(tag)}</span>`).join('');
+      const updated = item.updatedAt ? `最新更新时间：${esc(item.updatedAt)}` : '最新更新时间：待发起人填写';
+      const progressControl = `<button type="button" class="status status-button ${statusClass(progress)}" data-edit-progress="${esc(item.id)}" aria-label="编辑当前进度">${esc(progress)}</button>`;
+      const editControl = `<button class="edit" data-edit="${esc(item.id)}">编辑项目</button>`;
+      return `<article class="card ${progress === '已暂停' ? 'paused' : ''}" data-type="${esc(item.type)}" data-id="${esc(item.id)}">
+        <div class="card-top"><span class="type">${esc(typeLabel(item))} / ${esc(layerLabel(item))}</span>${progressControl}</div>
+        <h3>${esc(item.title)}</h3>
+        <div class="owner">发起人：${esc(item.owner || '待补充')}</div>
+        ${locations}
+        <div class="${needClass}"><b>现在需要</b>${need}</div>
+        <div class="updated">${updated}</div>
+        <div class="tags">${tags}</div>
+        <div class="card-footer"><button class="claimed" data-view-supporters="${esc(item.id)}">${supportText}</button><div class="actions">${editControl}<button class="support" data-support="${esc(item.id)}">我可以支持</button></div></div>
+      </article>`;
+    };
+    function updateSubnav() {
+      if (activeFilter === 'owners') {
+        subnav.innerHTML = '';
+        const ownerCounts = new Map();
+        projects().forEach(item => ownerNames(item).forEach(owner => ownerCounts.set(owner, (ownerCounts.get(owner) || 0) + 1)));
+        const owners = [...ownerCounts.entries()].sort((a,b) => a[0].localeCompare(b[0], 'zh-CN'));
+        ownerBoard.hidden = false;
+        ownerBoard.innerHTML = [{name:'全部发起人', key:'all', count:projects().length}, ...owners.map(([name,count]) => ({name, key:name, count}))].map(owner => `<button class="owner-chip ${activeOwner === owner.key ? 'active' : ''}" data-owner="${esc(owner.key)}">${esc(owner.name)}<small>${owner.count}</small></button>`).join('');
+        ownerBoard.querySelectorAll('[data-owner]').forEach(btn => btn.addEventListener('click', () => {
+          activeOwner = btn.dataset.owner;
+          updateSubnav();
+          render();
+        }));
+        return;
+      }
+      ownerBoard.hidden = true;
+      const scoped = projects().filter(item => activeFilter === 'all' || item.type === activeFilter);
+      const layers = [...new Set(scoped.map(layerLabel))];
+      const options = [{ key:'all', label:'全部主题' }, ...layers.map(layer => ({key:layer, label:layer}))];
+      subnav.innerHTML = options.map(option => `<button class="subtab ${activeSubfilter === option.key ? 'active' : ''}" data-subfilter="${esc(option.key)}">${esc(option.label)}</button>`).join('');
+      subnav.querySelectorAll('[data-subfilter]').forEach(btn => btn.addEventListener('click', () => {
+        activeSubfilter = btn.dataset.subfilter;
+        updateSubnav();
+        render();
+      }));
+    }
+    function bindCardActions(root) {
+      root.querySelectorAll('[data-support]').forEach(btn => btn.addEventListener('click', () => openSupport(btn.dataset.support)));
+      root.querySelectorAll('[data-view-supporters]').forEach(btn => btn.addEventListener('click', () => openSupporters(btn.dataset.viewSupporters)));
+      root.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.edit)));
+      root.querySelectorAll('[data-edit-progress]').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.editProgress, { focusProgress:true })));
+    }
+    function render() {
+      cardsRoot.hidden = false;
+      const visible = projects().filter(item => {
+        const matchesOwner = activeFilter !== 'owners' || activeOwner === 'all' || ownerNames(item).includes(activeOwner);
+        const matchesType = activeFilter === 'owners' || activeFilter === 'all' || item.type === activeFilter;
+        const matchesLayer = activeFilter === 'owners' || activeSubfilter === 'all' || layerLabel(item) === activeSubfilter;
+        return matchesOwner && matchesType && matchesLayer;
+      });
+      const groups = [];
+      const groupMap = new Map();
+      visible.forEach(item => {
+        const key = activeFilter === 'all' || activeFilter === 'owners' ? `${typeLabel(item)} / ${layerLabel(item)}` : layerLabel(item);
+        if (!groupMap.has(key)) { const group = { key, items: [] }; groupMap.set(key, group); groups.push(group); }
+        groupMap.get(key).items.push(item);
+      });
+      const groupHtml = groups.map(group => `<div class="group-label"><strong>${esc(group.key)}</strong><span>共建层级</span><em>${group.items.length} 项</em></div>${group.items.map(renderCard).join('')}`).join('');
+      cardsRoot.innerHTML = groupHtml + '<div class="empty" id="empty">这个分类暂时还没有项目。</div>';
+      const emptyNow = document.getElementById('empty');
+      emptyNow.style.display = visible.length ? 'none' : 'block';
+      count.textContent = `显示 ${visible.length} 个项目与活动`;
+      projectCount.textContent = `${baseProjects.length} 个`;
+      bindCardActions(cardsRoot);
+    }
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter;
+      activeSubfilter = 'all';
+      activeOwner = 'all';
+      updateSubnav();
+      render();
+    }));
+    function openSupport(id) {
+      const item = projects().find(project => project.id === id);
+      if (!item) return;
+      document.getElementById('modalTitle').textContent = `我想支持：${item.title}`;
+      document.getElementById('modalText').textContent = '留下姓名或昵称，发起人和其他成员都会看到你的支持意向。';
+      supportForm.reset();
+      supportForm.dataset.projectId = id;
+      modal.classList.add('open');
+    }
+    function openSupporters(id) {
+      const item = projects().find(project => project.id === id);
+      if (!item) return;
+      const records = supporterRecords(item);
+      document.getElementById('supportersTitle').textContent = `${item.title} · 支持意向`;
+      supportersText.textContent = records.length ? `已有 ${records.length} 位成员留下支持意向：` : '目前还没有公开支持意向。';
+      supportList.innerHTML = records.length ? records.map(record => `<div class="supporter-row"><strong>${esc(record.name)}</strong><span>${esc(record.type)}${isAdmin ? ` <button class="remove-support" data-remove-support="${esc(item.id)}" data-remove-name="${esc(record.name)}" data-remove-source="${esc(record.source)}" data-remove-id="${esc(record.id || '')}" type="button">删除</button>` : ''}</span></div>`).join('') : '<div class="support-empty">还没有人提交支持意向，成为第一个支持的人吧。</div>';
+      supportList.querySelectorAll('[data-remove-support]').forEach(button => button.addEventListener('click', () => removeSupport(button.dataset)));
+      supportersModal.classList.add('open');
+    }
+    async function removeSupport(data) {
+      if (!isAdmin) return openAdmin();
+      if (!confirm(`确定要删除 ${data.removeName} 的支持意向吗？`)) return;
+      try {
+        const response = await fetch('/api/supports', { method:'DELETE', headers:{'content-type':'application/json'}, body:JSON.stringify({ projectId:data.removeSupport, supporterName:data.removeName, source:data.removeSource, id:data.removeId || null }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'delete failed');
+        if (data.removeSource === 'seeded') {
+          supportExclusions = [...supportExclusions, { projectId:data.removeSupport, name:data.removeName }];
+        } else {
+          remoteSupports = remoteSupports.filter(record => String(record.id) !== String(data.removeId));
+        }
+        openSupporters(data.removeSupport);
+        render();
+        toast.textContent = '已删除这条支持意向';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      } catch {
+        toast.textContent = '暂时没有删除成功，请稍后再试';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      }
+    }
+    function openEdit(id, options = {}) {
+      const item = projects().find(project => project.id === id);
+      if (!item) return;
+      editingId = id;
+      document.getElementById('editTitle').textContent = `编辑：${item.title}`;
+      editForm.title.value = item.title || '';
+      editForm.owner.value = item.owner || '';
+      editForm.progress.value = normalizeProgress(item.progress);
+      editForm.need.value = item.need || '';
+      editForm.updatedAt.value = item.updatedAt || '';
+      editModal.classList.add('open');
+      if (options.focusProgress) editForm.progress.focus();
+    }
+    function closeModal(target) { target.classList.remove('open'); }
+    document.getElementById('close').addEventListener('click', () => closeModal(modal));
+    document.getElementById('closeSupporters').addEventListener('click', () => closeModal(supportersModal));
+    document.getElementById('cancelEdit').addEventListener('click', () => closeModal(editModal));
+    document.getElementById('cancelAdmin').addEventListener('click', () => closeModal(adminModal));
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(modal); });
+    supportersModal.addEventListener('click', e => { if (e.target === supportersModal) closeModal(supportersModal); });
+    editModal.addEventListener('click', e => { if (e.target === editModal) closeModal(editModal); });
+    adminModal.addEventListener('click', e => { if (e.target === adminModal) closeModal(adminModal); });
+    function setAdminState(value) {
+      isAdmin = Boolean(value);
+      adminState.textContent = isAdmin ? '管理员模式已开启' : '';
+      adminEntry.textContent = isAdmin ? '退出管理员模式' : '管理员入口';
+      render();
+    }
+    function openAdmin() {
+      if (isAdmin) return;
+      adminForm.reset();
+      adminNote.textContent = '管理员模式只用于维护支持意向，不影响大家编辑项目。';
+      adminModal.classList.add('open');
+      adminForm.password.focus();
+    }
+    adminEntry.addEventListener('click', async () => {
+      if (!isAdmin) return openAdmin();
+      try {
+        const response = await fetch('/api/admin/logout', { method:'POST' });
+        if (!response.ok) throw new Error('logout failed');
+        setAdminState(false);
+        toast.textContent = '已退出管理员模式';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      } catch {
+        toast.textContent = '暂时无法退出，请稍后再试';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      }
+    });
+    adminForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const button = adminForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = '验证中…';
+      adminNote.textContent = '';
+      try {
+        const response = await fetch('/api/admin/login', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ password:adminForm.password.value }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'login failed');
+        closeModal(adminModal);
+        setAdminState(true);
+        toast.textContent = '已进入管理员模式';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      } catch (error) {
+        adminNote.textContent = error.message === 'Admin login is not configured.' ? '管理员入口还未配置，请先完成后台设置。' : '密码不正确，或暂时无法登录。';
+      } finally {
+        button.disabled = false;
+        button.textContent = '进入管理员模式';
+      }
+    });
+    supportForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const projectId = supportForm.dataset.projectId;
+      const supporterName = supportForm.supporterName.value.trim();
+      const supportType = supportForm.supportType.value.trim();
+      if (!projectId || !supporterName) return;
+      const button = supportForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = '提交中…';
+      try {
+        if (staticMode) {
+          const record = { id:Date.now(), projectId, name:supporterName, supportType, createdAt:new Date().toISOString() };
+          remoteSupports = [record, ...remoteSupports.filter(item => !(item.projectId === projectId && item.name === supporterName && item.supportType === supportType))];
+          writeLocal('rhino-cocreation-static-supports-v1', remoteSupports);
+          closeModal(modal);
+          render();
+          toast.textContent = '已记录你的支持意向（仅保存在当前浏览器）';
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2600);
+          return;
+        }
+        const response = await fetch('/api/supports', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({projectId, supporterName, supportType}) });
+        if (!response.ok) throw new Error('submit failed');
+        const record = await response.json();
+        remoteSupports = [...remoteSupports.filter(item => !(item.projectId === record.projectId && item.name === record.name && item.supportType === record.supportType)), record];
+        closeModal(modal);
+        render();
+        toast.textContent = '已记录你的支持意向';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      } catch (error) {
+        toast.textContent = '暂时没有提交成功，请稍后再试';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      } finally {
+        button.disabled = false;
+        button.textContent = '提交支持意向';
+      }
+    });
+    editForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!editingId) return;
+      const payload = { title:editForm.title.value.trim(), owner:editForm.owner.value.trim(), progress:normalizeProgress(editForm.progress.value), need:editForm.need.value.trim(), updatedAt:editForm.updatedAt.value };
+      const button = editForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = '保存中…';
+      try {
+        if (staticMode) {
+          overrides[editingId] = payload;
+          writeLocal('rhino-cocreation-static-overrides-v1', overrides);
+          closeModal(editModal);
+          render();
+          toast.textContent = '已保存（仅保存在当前浏览器）';
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2600);
+          return;
+        }
+        const response = await fetch(`/api/project-overrides/${encodeURIComponent(editingId)}`, { method:'PUT', headers:{'content-type':'application/json'}, body:JSON.stringify(payload) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'save failed');
+        overrides[editingId] = payload;
+        closeModal(editModal);
+        render();
+        toast.textContent = '已保存，所有人刷新后都能看到';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      } catch (error) {
+        toast.textContent = '暂时没有保存成功，请稍后再试';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      } finally {
+        button.disabled = false;
+        button.textContent = '保存修改';
+      }
+    });
+    updateSubnav();
+    render();
+    if (!staticMode) {
+      Promise.all([
+        fetch('/api/project-overrides').then(response => response.ok ? response.json() : {}),
+        fetch('/api/admin/session').then(response => response.ok ? response.json() : { loggedIn:false }),
+        fetch('/api/supports').then(response => response.ok ? response.json() : []),
+        fetch('/api/support-exclusions').then(response => response.ok ? response.json() : [])
+      ]).then(([serverOverrides, session, records, exclusions]) => {
+        Object.assign(overrides, serverOverrides && typeof serverOverrides === 'object' ? serverOverrides : {});
+        remoteSupports = Array.isArray(records) ? records : [];
+        supportExclusions = Array.isArray(exclusions) ? exclusions : [];
+        setAdminState(Boolean(session && session.loggedIn));
+        updateSubnav();
+        render();
+      }).catch(() => {});
+    }
+  </script>
+</body>
+</html>
